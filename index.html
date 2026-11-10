@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#FDFBF7]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Lifedrop - Ghana Blood Donation Platform</title>
+  
+  <!-- PWA Manifest & Web App Metadata -->
+  <link rel="manifest" id="manifest-placeholder" />
+  <meta name="theme-color" content="#C83737" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lifedrop" />
+  <meta name="description" content="Ghana's offline-capable blood donor and emergency request network." />
+  
+  <!-- Dynamic PWA Manifest Injection -->
+  <script>
+    const manifestData = {
+      "name": "Lifedrop Ghana Blood Hub",
+      "short_name": "Lifedrop",
+      "start_url": "./index.html",
+      "display": "standalone",
+      "background_color": "#FDFBF7",
+      "theme_color": "#C83737",
+      "icons": [
+        {
+          "src": "https://img.icons8.com/emoji/192/drop-of-blood-emoji.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "https://img.icons8.com/emoji/512/drop-of-blood-emoji.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    };
+    const stringManifest = JSON.stringify(manifestData);
+    const blobManifest = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blobManifest);
+    document.querySelector('#manifest-placeholder').setAttribute('href', manifestURL);
+  </script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#FDFBF7',
+            beige: '#F4EFE6',
+            charcoal: '#2C302E',
+            crimson: {
+              DEFAULT: '#C83737',
+              dark: '#A62B2B',
+              light: '#FDF2F2'
+            }
+          },
+          fontSize: {
+            base: '14px',
+            sm: '13px',
+            xs: '12px',
+            lg: '16px',
+            xl: '18px',
+            '2xl': '22px'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Global baseline typography */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: #2C302E;
+      background-color: #FDFBF7;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* Custom Scrollbar for smooth mobile look */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #E2DACD;
+      border-radius: 4px;
+    }
+
+    /* Pulse animation for SOS status */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.99); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col justify-between max-w-md mx-auto relative shadow-2xl border-x border-[#EBE3D5] min-h-screen">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-30 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#EBE3D5] px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-crimson flex items-center justify-center text-white shadow-sm">
+        <i data-lucide="droplet" class="w-4 h-4 fill-current"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-base tracking-tight leading-none text-charcoal">LIFEDROP</h1>
+        <span class="text-[11px] text-charcoal/60 font-medium flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+          <span id="header-region">Accra, Ghana</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-1.5">
+      <!-- PWA Install Button (Appears when installable) -->
+      <button id="pwa-install-btn" onclick="installPWA()" class="px-2.5 py-1.5 rounded-lg bg-crimson text-white text-xs font-bold flex items-center gap-1 hover:bg-crimson-dark shadow transition-all hidden">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+        <span>Install App</span>
+      </button>
+
+      <button onclick="switchTab('help')" class="px-2.5 py-1.5 rounded-lg bg-beige border border-[#E2DACD] text-charcoal text-xs font-semibold flex items-center gap-1.5 hover:bg-[#EBE3D5] transition-colors">
+        <i data-lucide="phone-call" class="w-3.5 h-3.5 text-crimson"></i>
+        <span>Helpline</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER (Multi-View Single Page) -->
+  <main class="flex-1 overflow-y-auto pb-24 px-4 pt-3" id="app-viewport">
+
+    <!-- ==================== 1. HOME VIEW ==================== -->
+    <section id="view-home" class="space-y-4">
+      
+      <!-- PWA PROMPT BANNER -->
+      <div id="pwa-banner" class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between gap-2 shadow-sm hidden">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+            <i data-lucide="download-cloud" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-xs text-charcoal">Install Lifedrop App</h4>
+            <p class="text-[11px] text-charcoal/70">Use offline & get emergency alerts</p>
+          </div>
+        </div>
+        <button onclick="installPWA()" class="px-3 py-1 bg-amber-600 text-white font-bold text-xs rounded-lg shadow shrink-0">
+          Install
+        </button>
+      </div>
+
+      <!-- URGENT SOS EMERGENCY BANNER -->
+      <div class="bg-crimson-light border border-crimson/20 rounded-xl p-3.5 shadow-sm animate-pulse-subtle">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-crimson text-white text-[11px] font-bold uppercase tracking-wider">
+              CRITICAL SOS
+            </span>
+            <span class="text-xs text-crimson font-medium">Updated 10m ago</span>
+          </div>
+          <button onclick="openModal('sos-list-modal')" class="text-xs text-crimson font-semibold underline">
+            View All (3)
+          </button>
+        </div>
+        <p class="text-xs font-medium text-charcoal mt-2">
+          <strong>O- Negative</strong> urgently needed at Korle Bu Teaching Hospital (Accra). 2 Units required.
+        </p>
+        <button onclick="triggerEmergencyResponse('O-', 'Korle Bu Teaching Hospital')" class="mt-2.5 w-full py-2 rounded-lg bg-crimson text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow hover:bg-crimson-dark transition-colors">
+          <i data-lucide="heart-handshake" class="w-4 h-4"></i>
+          Respond to SOS Request
+        </button>
+      </div>
+
+      <!-- 2 PRIMARY ACTION CARDS -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Request Blood Card -->
+        <button onclick="openRequestForm()" class="bg-white border border-[#E2DACD] rounded-xl p-4 text-left shadow-sm hover:border-crimson/50 transition-all group flex flex-col justify-between h-36">
+          <div class="w-10 h-10 rounded-xl bg-crimson-light flex items-center justify-center text-crimson group-hover:scale-105 transition-transform">
+            <i data-lucide="file-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-charcoal leading-snug">I Need Blood</h3>
+            <p class="text-xs text-charcoal/60 mt-0.5">Submit request to nearby donor network</p>
+          </div>
+        </button>
+
+        <!-- Donate Blood Card -->
+        <button onclick="openDonateForm()" class="bg-crimson text-white rounded-xl p-4 text-left shadow-sm hover:bg-crimson-dark transition-all group flex flex-col justify-between h-36">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+            <i data-lucide="calendar-heart" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-white leading-snug">I Want to Donate</h3>
+            <p class="text-xs text-white/80 mt-0.5">Book donation slot or check eligibility</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- REAL-TIME STOCK ACCORDION SUMMARY -->
+      <div class="bg-beige border border-[#E2DACD] rounded-xl p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold text-xs text-charcoal uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="database" class="w-3.5 h-3.5 text-crimson"></i>
+            Regional Stock Snapshot
+          </span>
+          <button onclick="switchTab('donate')" class="text-xs font-semibold text-crimson hover:underline">Full Report &rarr;</button>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5 text-center">
+          <div class="bg-white p-2 rounded-lg border border-[#E2DACD]">
+            <div class="font-bold text-xs text-crimson">O+</div>
+            <div class="text-[11px] text-emerald-600 font-semibold">Adequate</div>
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-[#E2DACD]">
+            <div class="font-bold text-xs text-crimson">O-</div>
+            <div class="text-[11px] text-crimson font-bold">Critical</div>
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-[#E2DACD]">
+            <div class="font-bold text-xs text-crimson">A+</div>
+            <div class="text-[11px] text-amber-600 font-semibold">Moderate</div>
+          </div>
+          <div class="bg-white p-2 rounded-lg border border-[#E2DACD]">
+            <div class="font-bold text-xs text-crimson">B+</div>
+            <div class="text-[11px] text-emerald-600 font-semibold">Adequate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE COMMUNITY BLOOD DRIVES -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-bold text-base text-charcoal">Live Community Drives</h2>
+          <span class="text-xs text-charcoal/60">Ghana National Blood Service</span>
+        </div>
+
+        <div class="space-y-2.5">
+          <!-- Drive Card 1 -->
+          <div class="bg-white border border-[#E2DACD] rounded-xl p-3.5 shadow-sm flex items-start justify-between gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-1.5 text-xs text-crimson font-semibold">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                <span>Takoradi Central Market Ground</span>
+              </div>
+              <h3 class="font-bold text-sm text-charcoal mt-1">Western Region Donation Drive</h3>
+              <p class="text-xs text-charcoal/70 mt-0.5">Organized by Effia Nkwanta Regional Hospital</p>
+              <div class="flex items-center gap-3 mt-2 text-xs text-charcoal/60">
+                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> 8:00 AM - 4:00 PM</span>
+                <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Nov 15</span>
+              </div>
+            </div>
+            <button onclick="registerForDrive('Takoradi Drive')" class="px-3 py-1.5 bg-beige border border-[#E2DACD] text-charcoal text-xs font-semibold rounded-lg hover:bg-crimson hover:text-white transition-colors">
+              Book
+            </button>
+          </div>
+
+          <!-- Drive Card 2 -->
+          <div class="bg-white border border-[#E2DACD] rounded-xl p-3.5 shadow-sm flex items-start justify-between gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-1.5 text-xs text-crimson font-semibold">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                <span>KNUST Campus, Kumasi</span>
+              </div>
+              <h3 class="font-bold text-sm text-charcoal mt-1">Ashanti Youth Blood Drive</h3>
+              <p class="text-xs text-charcoal/70 mt-0.5">Collaborating with Komfo Anokye Teaching Hospital</p>
+              <div class="flex items-center gap-3 mt-2 text-xs text-charcoal/60">
+                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> 9:00 AM - 5:00 PM</span>
+                <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Nov 18</span>
+              </div>
+            </div>
+            <button onclick="registerForDrive('KNUST Drive')" class="px-3 py-1.5 bg-beige border border-[#E2DACD] text-charcoal text-xs font-semibold rounded-lg hover:bg-crimson hover:text-white transition-colors">
+              Book
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== 2. DONATE & REQUEST VIEW ==================== -->
+    <section id="view-donate" class="space-y-4 hidden">
+
+      <div class="bg-beige p-3 rounded-xl border border-[#E2DACD]">
+        <h2 class="font-bold text-base text-charcoal">Donate & Request Hub</h2>
+        <p class="text-xs text-charcoal/70">Tap a section below to expand its dedicated options.</p>
+      </div>
+
+      <!-- ACCORDION 1: REQUEST BLOOD -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('acc-request')" class="w-full p-4 text-left flex items-center justify-between bg-white hover:bg-beige/40 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-crimson-light text-crimson flex items-center justify-center font-bold">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-charcoal">I Need Blood (Request Form)</h3>
+              <p class="text-xs text-charcoal/60">Dispatch request to local verified donors</p>
+            </div>
+          </div>
+          <i id="icon-acc-request" data-lucide="chevron-down" class="w-4 h-4 text-charcoal/50 transition-transform"></i>
+        </button>
+
+        <div id="acc-request" class="p-4 border-t border-[#E2DACD] bg-[#FDFBF7] hidden space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1">Required Blood Type</label>
+            <select id="req-blood-type" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs font-semibold text-charcoal focus:outline-none focus:border-crimson">
+              <option value="A+">A Positive (A+)</option>
+              <option value="A-">A Negative (A-)</option>
+              <option value="B+">B Positive (B+)</option>
+              <option value="B-">B Negative (B-)</option>
+              <option value="AB+">AB Positive (AB+)</option>
+              <option value="AB-">AB Negative (AB-)</option>
+              <option value="O+" selected>O Positive (O+)</option>
+              <option value="O-">O Negative (O-)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-charcoal mb-1">Pints / Units Needed</label>
+              <input type="number" id="req-units" min="1" max="10" value="2" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-charcoal mb-1">Urgency Level</label>
+              <select id="req-urgency" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson">
+                <option value="Emergency">Urgent (Within 3 hrs)</option>
+                <option value="Standard">Standard (24 Hours)</option>
+                <option value="Scheduled">Scheduled Surgery</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1">Hospital / Clinic Name</label>
+            <input type="text" id="req-hospital" placeholder="e.g. Ridge Hospital, Accra" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1">Contact Phone Number</label>
+            <input type="tel" id="req-phone" placeholder="024 XXX XXXX" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson" />
+          </div>
+
+          <button onclick="submitBloodRequest()" class="w-full py-2.5 bg-crimson text-white font-bold text-xs rounded-lg shadow hover:bg-crimson-dark transition-colors flex items-center justify-center gap-1.5">
+            <i data-lucide="bell-ring" class="w-4 h-4"></i>
+            Broadcast Emergency Request
+          </button>
+        </div>
+      </div>
+
+      <!-- ACCORDION 2: DONATE BLOOD -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('acc-donate')" class="w-full p-4 text-left flex items-center justify-between bg-white hover:bg-beige/40 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <i data-lucide="heart" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-charcoal">I Want to Donate</h3>
+              <p class="text-xs text-charcoal/60">Schedule appointment & eligibility check</p>
+            </div>
+          </div>
+          <i id="icon-acc-donate" data-lucide="chevron-down" class="w-4 h-4 text-charcoal/50 transition-transform"></i>
+        </button>
+
+        <div id="acc-donate" class="p-4 border-t border-[#E2DACD] bg-[#FDFBF7] hidden space-y-3">
+          
+          <!-- Quick Eligibility Modal Trigger -->
+          <div class="bg-beige border border-[#E2DACD] p-3 rounded-lg flex items-center justify-between">
+            <div>
+              <span class="font-semibold text-xs text-charcoal">Eligibility Quiz</span>
+              <p class="text-[11px] text-charcoal/60">Check age, weight, and last donation date</p>
+            </div>
+            <button onclick="openModal('eligibility-modal')" class="px-2.5 py-1 bg-white border border-[#E2DACD] text-xs font-bold text-charcoal rounded hover:bg-crimson hover:text-white transition-colors">
+              Check Now
+            </button>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-charcoal mb-1">Select Blood Bank / Hospital</label>
+            <select id="donate-center" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs font-semibold text-charcoal focus:outline-none focus:border-crimson">
+              <option>Korle Bu Blood Bank (Accra)</option>
+              <option>Komfo Anokye Teaching Hospital (Kumasi)</option>
+              <option>Effia Nkwanta Regional Hospital (Takoradi)</option>
+              <option>Tamale Teaching Hospital (Tamale)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-charcoal mb-1">Preferred Date</label>
+              <input type="date" id="donate-date" class="w-full p-2 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-charcoal mb-1">Time Slot</label>
+              <select id="donate-time" class="w-full p-2.5 bg-white border border-[#E2DACD] rounded-lg text-xs text-charcoal focus:outline-none focus:border-crimson">
+                <option>Morning (9AM - 12PM)</option>
+                <option>Afternoon (12PM - 3PM)</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="bookDonationSlot()" class="w-full py-2.5 bg-charcoal text-white font-bold text-xs rounded-lg shadow hover:bg-charcoal/90 transition-colors flex items-center justify-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+            Confirm Appointment Slot
+          </button>
+        </div>
+      </div>
+
+      <!-- ACCORDION 3: FULL REAL-TIME STOCK INVENTORY -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('acc-stock')" class="w-full p-4 text-left flex items-center justify-between bg-white hover:bg-beige/40 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-charcoal">Real-Time Blood Bank Inventory</h3>
+              <p class="text-xs text-charcoal/60">Live count across all 8 blood groups</p>
+            </div>
+          </div>
+          <i id="icon-acc-stock" data-lucide="chevron-down" class="w-4 h-4 text-charcoal/50 transition-transform"></i>
+        </button>
+
+        <div id="acc-stock" class="p-4 border-t border-[#E2DACD] bg-[#FDFBF7] hidden">
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">A Positive (A+)</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">42 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">A Negative (A-)</span>
+              <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[11px]">8 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">B Positive (B+)</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">35 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">B Negative (B-)</span>
+              <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[11px]">5 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">AB Positive (AB+)</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">19 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">AB Negative (AB-)</span>
+              <span class="px-2 py-0.5 rounded bg-crimson-light text-crimson font-bold text-[11px]">2 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">O Positive (O+)</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">68 Units</span>
+            </div>
+            <div class="bg-white p-2.5 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+              <span class="font-bold text-crimson">O Negative (O-)</span>
+              <span class="px-2 py-0.5 rounded bg-crimson-light text-crimson font-bold text-[11px]">1 Unit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== 3. DONOR PASS VIEW ==================== -->
+    <section id="view-pass" class="space-y-4 hidden">
+      
+      <!-- DIGITAL DONOR ID CARD -->
+      <div class="bg-gradient-to-br from-charcoal to-[#1A1C1B] text-white rounded-2xl p-4 shadow-lg relative overflow-hidden">
+        <!-- Background Droplet Decor -->
+        <i data-lucide="droplet" class="w-32 h-32 absolute -right-6 -bottom-6 text-white/5 fill-current"></i>
+
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-crimson-light/80">Ghana Digital Donor Pass</span>
+            <h2 id="pass-donor-name" class="font-bold text-lg text-white mt-0.5">Kofi Mensah</h2>
+            <p id="pass-donor-id" class="text-xs text-white/60">ID: LIF-GH-8842</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-crimson text-white flex flex-col items-center justify-center font-black shadow">
+            <span class="text-xs leading-none">TYPE</span>
+            <span id="pass-blood-type" class="text-base leading-none">O+</span>
+          </div>
+        </div>
+
+        <div class="my-4 p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[11px] text-white/60 block">Scan at Blood Bank</span>
+            <span class="text-xs font-mono tracking-widest text-white/90">VERIFIED DONOR</span>
+          </div>
+          <!-- Simulated QR Code SVG -->
+          <div class="w-12 h-12 bg-white p-1 rounded-md flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-full h-full text-charcoal fill-current">
+              <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm9-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm13-2h4v2h-4v-2zm-4 4h2v4h-2v-4zm2 2h4v2h-4v-2z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-white/70 pt-1 border-t border-white/10">
+          <span>Status: <strong class="text-emerald-400 font-semibold">Active Donor</strong></span>
+          <span>Region: <strong class="text-white font-semibold">Greater Accra</strong></span>
+        </div>
+      </div>
+
+      <!-- DONATION ELIGIBILITY & METRICS SUMMARY -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Next Eligible Date -->
+        <div class="bg-white border border-[#E2DACD] rounded-xl p-3.5 shadow-sm text-center">
+          <div class="w-8 h-8 rounded-full bg-crimson-light text-crimson mx-auto flex items-center justify-center mb-1.5">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+          </div>
+          <span class="text-[11px] text-charcoal/60 font-medium block">Next Eligible Date</span>
+          <span class="font-bold text-sm text-crimson block mt-0.5">Dec 12, 2026</span>
+          <span class="text-[10px] text-emerald-600 font-semibold mt-1 block">In 32 Days</span>
+        </div>
+
+        <!-- Lives Saved Counter -->
+        <div class="bg-white border border-[#E2DACD] rounded-xl p-3.5 shadow-sm text-center">
+          <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 mx-auto flex items-center justify-center mb-1.5">
+            <i data-lucide="award" class="w-4 h-4"></i>
+          </div>
+          <span class="text-[11px] text-charcoal/60 font-medium block">Impact Score</span>
+          <span class="font-bold text-base text-charcoal block mt-0.5">9 Lives Saved</span>
+          <span class="text-[10px] text-charcoal/60 mt-1 block">3 Donations Total</span>
+        </div>
+      </div>
+
+      <!-- DONATION HISTORY LOG (Collapsible) -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl p-4 shadow-sm">
+        <h3 class="font-bold text-base text-charcoal mb-3 flex items-center gap-2">
+          <i data-lucide="history" class="w-4 h-4 text-crimson"></i>
+          Personal Donation History
+        </h3>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="p-2.5 bg-beige/60 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+            <div>
+              <span class="font-bold text-charcoal block">Korle Bu Blood Bank</span>
+              <span class="text-charcoal/60 text-[11px]">Sept 12, 2026 • 1 Pint Whole Blood</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Completed</span>
+          </div>
+
+          <div class="p-2.5 bg-beige/60 rounded-lg border border-[#E2DACD] flex justify-between items-center">
+            <div>
+              <span class="font-bold text-charcoal block">37 Military Hospital</span>
+              <span class="text-charcoal/60 text-[11px]">May 04, 2026 • 1 Pint Whole Blood</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Completed</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== 4. HELP CENTER & SETTINGS VIEW ==================== -->
+    <section id="view-help" class="space-y-4 hidden">
+      
+      <!-- DIRECT 1-TAP EMERGENCY HELPLINE -->
+      <div class="bg-crimson text-white rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-white/80">24/7 National Blood Line</span>
+          <h3 class="font-bold text-base text-white mt-0.5">Emergency Dispatch</h3>
+          <p class="text-xs text-white/90">Connect directly with blood logistics</p>
+        </div>
+        <a href="tel:0508274088" class="px-3.5 py-2 bg-white text-crimson font-bold text-xs rounded-lg shadow hover:bg-beige transition-colors flex items-center gap-1.5">
+          <i data-lucide="phone" class="w-4 h-4 fill-current"></i>
+          Call Now
+        </a>
+      </div>
+
+      <!-- APP INSTALL & OFFLINE CARD -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-xs text-charcoal">Install App to Phone</h3>
+          <p class="text-[11px] text-charcoal/60">Works offline without internet</p>
+        </div>
+        <button onclick="installPWA()" class="px-3 py-1.5 bg-crimson text-white font-bold text-xs rounded-lg shadow">
+          Download
+        </button>
+      </div>
+
+      <!-- BLOOD DONATION FAQ ACCORDION -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl p-4 shadow-sm">
+        <h3 class="font-bold text-base text-charcoal mb-3 flex items-center gap-2">
+          <i data-lucide="help-circle" class="w-4 h-4 text-crimson"></i>
+          Blood Donation FAQ
+        </h3>
+
+        <div class="space-y-2">
+          <!-- FAQ item 1 -->
+          <div class="border border-[#E2DACD] rounded-lg overflow-hidden">
+            <button onclick="toggleAccordion('faq-1')" class="w-full p-2.5 bg-beige/40 text-left font-semibold text-xs text-charcoal flex justify-between items-center">
+              <span>Who is eligible to donate blood in Ghana?</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-charcoal/60"></i>
+            </button>
+            <div id="faq-1" class="p-2.5 text-xs text-charcoal/80 bg-white hidden border-t border-[#E2DACD]">
+              Anyone between 17 and 60 years old, weighing at least 50kg, in good general health, and who hasn't donated blood in the past 90 days.
+            </div>
+          </div>
+
+          <!-- FAQ item 2 -->
+          <div class="border border-[#E2DACD] rounded-lg overflow-hidden">
+            <button onclick="toggleAccordion('faq-2')" class="w-full p-2.5 bg-beige/40 text-left font-semibold text-xs text-charcoal flex justify-between items-center">
+              <span>How long does blood testing & matching take?</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-charcoal/60"></i>
+            </button>
+            <div id="faq-2" class="p-2.5 text-xs text-charcoal/80 bg-white hidden border-t border-[#E2DACD]">
+              Standard screening (Hepatitis, HIV, Syphilis) and cross-matching takes between 45 minutes to 2 hours at major regional health centers.
+            </div>
+          </div>
+
+          <!-- FAQ item 3 -->
+          <div class="border border-[#E2DACD] rounded-lg overflow-hidden">
+            <button onclick="toggleAccordion('faq-3')" class="w-full p-2.5 bg-beige/40 text-left font-semibold text-xs text-charcoal flex justify-between items-center">
+              <span>How does emergency dispatch work?</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-charcoal/60"></i>
+            </button>
+            <div id="faq-3" class="p-2.5 text-xs text-charcoal/80 bg-white hidden border-t border-[#E2DACD]">
+              Once an SOS request is broadcasted, nearby registered donors with matching blood groups receive instant SMS and in-app alerts with hospital routing details.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP PREFERENCES & REGION SELECTOR -->
+      <div class="bg-white border border-[#E2DACD] rounded-xl p-4 shadow-sm space-y-3">
+        <h3 class="font-bold text-base text-charcoal flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-crimson"></i>
+          App Settings & Preferences
+        </h3>
+
+        <div>
+          <label class="block text-xs font-bold text-charcoal mb-1">Primary Region</label>
+          <select id="user-region-select" onchange="updateRegion(this.value)" class="w-full p-2.5 bg-beige border border-[#E2DACD] rounded-lg text-xs font-semibold text-charcoal focus:outline-none">
+            <option value="Accra, Ghana">Greater Accra Region (Accra)</option>
+            <option value="Kumasi, Ghana">Ashanti Region (Kumasi)</option>
+            <option value="Takoradi, Ghana">Western Region (Takoradi)</option>
+            <option value="Tamale, Ghana">Northern Region (Tamale)</option>
+          </select>
+        </div>
+
+        <!-- Offline SMS Alerts Toggle -->
+        <div class="flex items-center justify-between p-2.5 bg-beige/50 border border-[#E2DACD] rounded-lg">
+          <div>
+            <span class="font-bold text-xs text-charcoal block">Offline SMS Blood Alerts</span>
+            <span class="text-[11px] text-charcoal/60">Receive SMS when mobile internet is OFF</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="sms-toggle" checked onchange="toggleSMS(this.checked)" class="sr-only peer" />
+            <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-crimson"></div>
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== FIXED 4-TAB BOTTOM NAVIGATION ==================== -->
+  <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#FDFBF7]/95 backdrop-blur-md border-t border-[#EBE3D5] px-2 py-2 z-40">
+    <div class="grid grid-cols-4 gap-1 text-center">
+      
+      <!-- Tab 1: Home -->
+      <button onclick="switchTab('home')" id="tab-btn-home" class="py-1.5 rounded-xl flex flex-col items-center justify-center text-crimson font-bold transition-all">
+        <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Home</span>
+      </button>
+
+      <!-- Tab 2: Donate & Request -->
+      <button onclick="switchTab('donate')" id="tab-btn-donate" class="py-1.5 rounded-xl flex flex-col items-center justify-center text-charcoal/60 font-medium transition-all hover:text-charcoal">
+        <i data-lucide="git-pull-request" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Donate & Request</span>
+      </button>
+
+      <!-- Tab 3: Donor Pass -->
+      <button onclick="switchTab('pass')" id="tab-btn-pass" class="py-1.5 rounded-xl flex flex-col items-center justify-center text-charcoal/60 font-medium transition-all hover:text-charcoal">
+        <i data-lucide="qr-code" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Donor Pass</span>
+      </button>
+
+      <!-- Tab 4: Help & Settings -->
+      <button onclick="switchTab('help')" id="tab-btn-help" class="py-1.5 rounded-xl flex flex-col items-center justify-center text-charcoal/60 font-medium transition-all hover:text-charcoal">
+        <i data-lucide="help-circle" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Help & Info</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ==================== MODAL DIALOGS ==================== -->
+
+  <!-- SOS LIST MODAL -->
+  <div id="sos-list-modal" class="fixed inset-0 bg-charcoal/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-[#FDFBF7] w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-[#E2DACD] p-4 space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DACD]">
+        <h3 class="font-bold text-base text-charcoal flex items-center gap-1.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-crimson"></i>
+          Active Emergency SOS Broadcasts
+        </h3>
+        <button onclick="closeModal('sos-list-modal')" class="p-1 rounded-full hover:bg-beige"><i data-lucide="x" class="w-4 h-4 text-charcoal"></i></button>
+      </div>
+      
+      <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+        <div class="p-2.5 bg-white border border-[#E2DACD] rounded-lg">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-crimson">O- Negative (2 Units)</span>
+            <span class="text-charcoal/60 text-[10px]">Korle Bu Hospital</span>
+          </div>
+          <button onclick="triggerEmergencyResponse('O-', 'Korle Bu Hospital')" class="mt-2 w-full py-1 bg-crimson text-white text-xs font-bold rounded">Respond</button>
+        </div>
+        <div class="p-2.5 bg-white border border-[#E2DACD] rounded-lg">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-crimson">B- Negative (1 Unit)</span>
+            <span class="text-charcoal/60 text-[10px]">Effia Nkwanta Hospital</span>
+          </div>
+          <button onclick="triggerEmergencyResponse('B-', 'Effia Nkwanta Hospital')" class="mt-2 w-full py-1 bg-crimson text-white text-xs font-bold rounded">Respond</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELIGIBILITY MODAL -->
+  <div id="eligibility-modal" class="fixed inset-0 bg-charcoal/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-[#FDFBF7] w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-[#E2DACD] p-4 space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-[#E2DACD]">
+        <h3 class="font-bold text-base text-charcoal">Donor Eligibility Checklist</h3>
+        <button onclick="closeModal('eligibility-modal')" class="p-1 rounded-full hover:bg-beige"><i data-lucide="x" class="w-4 h-4 text-charcoal"></i></button>
+      </div>
+
+      <div class="space-y-2 text-xs text-charcoal/80">
+        <label class="flex items-center gap-2 p-2 bg-white rounded border border-[#E2DACD]">
+          <input type="checkbox" checked class="accent-crimson w-4 h-4" />
+          <span>I am between 17 and 60 years old.</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-white rounded border border-[#E2DACD]">
+          <input type="checkbox" checked class="accent-crimson w-4 h-4" />
+          <span>I weigh at least 50 kg (110 lbs).</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-white rounded border border-[#E2DACD]">
+          <input type="checkbox" checked class="accent-crimson w-4 h-4" />
+          <span>I have not donated blood in the last 90 days.</span>
+        </label>
+      </div>
+
+      <button onclick="closeModal('eligibility-modal')" class="w-full py-2 bg-charcoal text-white text-xs font-bold rounded-lg">Done Checking</button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-charcoal text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 hidden flex items-center gap-2 border border-white/10">
+    <i data-lucide="info" class="w-4 h-4 text-crimson-light"></i>
+    <span id="toast-message">Notification message</span>
+  </div>
+
+  <!-- JAVASCRIPT APP CONTROLLER & DOWNLOAD PWA LOGIC -->
+  <script>
+    let deferredPrompt;
+
+    // LISTEN FOR PWA INSTALL PROMPT
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Show install buttons
+      const installBtn = document.getElementById('pwa-install-btn');
+      const pwaBanner = document.getElementById('pwa-banner');
+      if (installBtn) installBtn.classList.remove('hidden');
+      if (pwaBanner) pwaBanner.classList.remove('hidden');
+    });
+
+    // TRIGGER PWA INSTALLATION
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showToast('Installing Lifedrop to Home Screen...');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        showToast('To install: Tap browser menu (3 dots or share icon) -> "Add to Home Screen"');
+      }
+    }
+
+    // Initialize Lucide Icons
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateInput = document.getElementById('donate-date');
+      if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
+    });
+
+    // NAVIGATION TAB SWITCHER
+    function switchTab(tabId) {
+      const views = ['home', 'donate', 'pass', 'help'];
+      
+      views.forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        const btnEl = document.getElementById(`tab-btn-${v}`);
+        
+        if (v === tabId) {
+          viewEl.classList.remove('hidden');
+          btnEl.classList.add('text-crimson', 'font-bold');
+          btnEl.classList.remove('text-charcoal/60', 'font-medium');
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.classList.remove('text-crimson', 'font-bold');
+          btnEl.classList.add('text-charcoal/60', 'font-medium');
+        }
+      });
+
+      document.getElementById('app-viewport').scrollTop = 0;
+    }
+
+    // ACCORDION TOGGLE
+    function toggleAccordion(id) {
+      const content = document.getElementById(id);
+      const icon = document.getElementById(`icon-${id}`);
+      
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+      } else {
+        content.classList.add('hidden');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // MODAL HELPERS
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // DIRECT ACTION SHORTCUTS
+    function openRequestForm() {
+      switchTab('donate');
+      const acc = document.getElementById('acc-request');
+      if (acc.classList.contains('hidden')) {
+        toggleAccordion('acc-request');
+      }
+    }
+
+    function openDonateForm() {
+      switchTab('donate');
+      const acc = document.getElementById('acc-donate');
+      if (acc.classList.contains('hidden')) {
+        toggleAccordion('acc-donate');
+      }
+    }
+
+    // BUSINESS LOGIC ACTIONS
+    function submitBloodRequest() {
+      const hospital = document.getElementById('req-hospital').value || 'Specified Hospital';
+      const bloodType = document.getElementById('req-blood-type').value;
+      
+      showToast(`Emergency request for ${bloodType} at ${hospital} broadcasted!`);
+      toggleAccordion('acc-request');
+    }
+
+    function bookDonationSlot() {
+      const center = document.getElementById('donate-center').value;
+      showToast(`Appointment confirmed at ${center}! Check Donor Pass.`);
+      toggleAccordion('acc-donate');
+    }
+
+    function triggerEmergencyResponse(bloodGroup, location) {
+      closeModal('sos-list-modal');
+      showToast(`Response logged for ${bloodGroup} at ${location}. Dispatch contacting you.`);
+    }
+
+    function registerForDrive(driveName) {
+      showToast(`Registered for ${driveName}. Notification set!`);
+    }
+
+    function updateRegion(newRegion) {
+      document.getElementById('header-region').textContent = newRegion;
+      showToast(`Region updated to ${newRegion}`);
+    }
+
+    function toggleSMS(enabled) {
+      showToast(enabled ? "Offline SMS alerts enabled" : "Offline SMS alerts muted");
+    }
+
+    // TOAST SYSTEM
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = msg;
+      
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+  </script>
+
+  <!-- PWA SERVICE WORKER REGISTRATION (OFFLINE CACHING) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          const CACHE_NAME = 'lifedrop-pwa-v2';
+          self.addEventListener('install', (e) => {
+            self.skipWaiting();
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => {
+                return cache.addAll(['./', './index.html']);
+              })
+            );
+          });
+          self.addEventListener('activate', (e) => self.clients.claim());
+          self.addEventListener('fetch', (e) => {
+            e.respondWith(
+              caches.match(e.request).then((res) => res || fetch(e.request))
+            );
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
